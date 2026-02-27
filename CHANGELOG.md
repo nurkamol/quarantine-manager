@@ -1,6 +1,6 @@
 # Quarantine Manager Changelog
 
-## [Initial Release] - {PR_MERGE_DATE}
+## [1.0.0] - 2026-02-28
 
 ### Added
 - **Remove Quarantine** command — view quarantine status and remove `com.apple.quarantine` attribute with one action
@@ -11,3 +11,4 @@
 - Copy `xattr` terminal command to clipboard
 - Remove all extended attributes option
 - Color-coded status badges (quarantined vs clean)
+- Binary plist decoding for attributes like `com.apple.metadata:kMDItemWhereFroms`
