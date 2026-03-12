@@ -8,6 +8,8 @@ When you download an app outside the Mac App Store, macOS tags it with a `com.ap
 
 Developers and power users frequently need to check and clear this flag — for apps built locally, tools distributed via direct download, or utilities that Gatekeeper misidentifies. This extension gives you a fast, readable way to do that from Raycast.
 
+<a title="Install quarantine-manager Raycast Extension" href="https://www.raycast.com/nurkamol/quarantine-manager"><img src="https://www.raycast.com/nurkamol/quarantine-manager/install_button@2x.png?v=1.1" height="64" style="height: 64px;" alt=""></a>
+
 ---
 
 ## Screenshots
