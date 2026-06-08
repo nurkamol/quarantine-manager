@@ -121,7 +121,7 @@ function buildDirMarkdown(scan: DirectoryScan): string {
   }
 
   if (total > 0) {
-    md += `> Use **Remove Quarantine (recursive)** to clear \`com.apple.quarantine\` from `;
+    md += `> Use **Remove Quarantine (Recursive)** to clear \`com.apple.quarantine\` from `;
     md += `${scan.isApp ? "the entire bundle" : "this folder and its contents"} at once.\n`;
   }
 

@@ -416,13 +416,21 @@ export function scanDirectory(dirPath: string): DirectoryScan {
     } catch {
       children = [];
     }
-    if (children.length > 0) {
-      const res = spawnSync("xattr", children, {
+    // Process children in chunks to stay well under ARG_MAX, and append dirPath
+    // as a sentinel so every call has >= 2 path arguments. With a single path,
+    // xattr prints bare attribute names (no "<path>: " prefix); the extra arg
+    // forces the prefixed format so a lone quarantined child is never missed.
+    const CHUNK = 256;
+    for (let i = 0; i < children.length; i += CHUNK) {
+      const batch = children.slice(i, i + CHUNK);
+      const res = spawnSync("xattr", [...batch, dirPath], {
         encoding: "utf8",
         timeout: 30000,
         maxBuffer: 64 * 1024 * 1024,
       });
-      quarantinedPaths = collectQuarantinedPaths(res.stdout ?? "");
+      quarantinedPaths.push(
+        ...collectQuarantinedPaths(res.stdout ?? "", dirPath),
+      );
     }
   }
 
