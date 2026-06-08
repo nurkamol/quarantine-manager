@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from "child_process";
+import { execFileSync, spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -24,6 +24,18 @@ export function getFileName(filePath: string): string {
   return path.basename(filePath);
 }
 
+export function isApp(filePath: string): boolean {
+  return filePath.endsWith(".app") || filePath.includes(".app/");
+}
+
+export function isDirectory(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 /**
  * True if a decoded attribute value contains non-printable control bytes or the
  * Unicode replacement char — i.e. it's raw binary that should be shown as hex
@@ -38,18 +50,6 @@ function looksBinary(value: string): boolean {
     if (c < 0x20 || c === 0xfffd) return true;
   }
   return false;
-}
-
-export function isApp(filePath: string): boolean {
-  return filePath.endsWith(".app") || filePath.includes(".app/");
-}
-
-export function isDirectory(filePath: string): boolean {
-  try {
-    return fs.statSync(filePath).isDirectory();
-  } catch {
-    return false;
-  }
 }
 
 export function formatFileSize(bytes: number): string {
@@ -67,7 +67,7 @@ export function getQuarantineStatus(filePath: string): QuarantineStatus {
   // Get all extended attributes
   let rawAttrs: string[] = [];
   try {
-    const output = execSync(`xattr "${filePath}"`, {
+    const output = execFileSync("xattr", [filePath], {
       encoding: "utf8",
       timeout: 5000,
     });
@@ -83,29 +83,44 @@ export function getQuarantineStatus(filePath: string): QuarantineStatus {
   const allAttributes: XattrInfo[] = rawAttrs.map((attrName) => {
     let value = "";
     try {
-      const raw = execSync(`xattr -p "${attrName}" "${filePath}"`, {
+      const raw = execFileSync("xattr", ["-p", attrName, filePath], {
         encoding: "utf8",
         timeout: 5000,
-      }).trim();
+      }).toString();
       if (raw.startsWith("bplist")) {
-        // Binary plist — convert to human-readable via plutil
+        // Binary plist — get hex and parse with plutil
         try {
-          value = execSync(
-            `xattr -px "${attrName}" "${filePath}" | xxd -r -p | plutil -p -`,
-            { encoding: "utf8", timeout: 5000 },
-          ).trim();
-        } catch {
-          // Fallback: hex dump
-          value = execSync(`xattr -px "${attrName}" "${filePath}"`, {
+          const hex = execFileSync("xattr", ["-px", attrName, filePath], {
             encoding: "utf8",
             timeout: 5000,
           }).trim();
+          const buf = Buffer.from(hex.replace(/\s+/g, ""), "hex");
+          const parsed = spawnSync("plutil", ["-p", "-"], {
+            input: buf,
+            encoding: "utf8",
+            timeout: 5000,
+          });
+          if (parsed.status === 0) {
+            value = parsed.stdout.trim();
+          } else {
+            value = hex;
+          }
+        } catch {
+          // Fallback: hex dump
+          try {
+            value = execFileSync("xattr", ["-px", attrName, filePath], {
+              encoding: "utf8",
+              timeout: 5000,
+            }).trim();
+          } catch {
+            value = "(unable to read)";
+          }
         }
       } else if (looksBinary(raw)) {
         // Raw binary (e.g. com.apple.macl, com.apple.provenance) — show as hex
         // instead of letting non-printable bytes render as � / □.
         try {
-          value = execSync(`xattr -px "${attrName}" "${filePath}"`, {
+          value = execFileSync("xattr", ["-px", attrName, filePath], {
             encoding: "utf8",
             timeout: 5000,
           }).trim();
@@ -113,10 +128,19 @@ export function getQuarantineStatus(filePath: string): QuarantineStatus {
           value = "(binary data)";
         }
       } else {
-        value = raw;
+        value = raw.trim();
       }
     } catch {
-      value = "(unable to read)";
+      // Try hex path as a fallback for binary attributes
+      try {
+        const hex = execFileSync("xattr", ["-px", attrName, filePath], {
+          encoding: "utf8",
+          timeout: 5000,
+        }).trim();
+        value = hex;
+      } catch {
+        value = "(unable to read)";
+      }
     }
 
     const isQuarantine = attrName === "com.apple.quarantine";
@@ -138,7 +162,7 @@ export function getQuarantineStatus(filePath: string): QuarantineStatus {
   try {
     const stat = fs.statSync(filePath);
     fileSize = formatFileSize(stat.size);
-    lastModified = new Date(stat.mtime).toLocaleString();
+    lastModified = new Date(stat.mtime).toLocaleString("en-US");
   } catch {
     // ignore
   }
@@ -162,15 +186,26 @@ export function removeQuarantine(filePath: string): {
 } {
   // Try without sudo first
   try {
-    execSync(`xattr -dr com.apple.quarantine "${filePath}"`, {
+    execFileSync("xattr", ["-dr", "com.apple.quarantine", filePath], {
       timeout: 10000,
     });
     return { success: true, usedAdmin: false };
   } catch (err) {
     // Try with admin privileges via osascript
     try {
-      execSync(
-        `osascript -e 'do shell script "xattr -dr com.apple.quarantine \\"${filePath}\\"" with administrator privileges'`,
+      execFileSync(
+        "osascript",
+        [
+          "-e",
+          "on run argv",
+          "-e",
+          "set p to item 1 of argv",
+          "-e",
+          'do shell script "xattr -dr com.apple.quarantine " & quoted form of POSIX path p with administrator privileges',
+          "-e",
+          "end run",
+          filePath,
+        ],
         { timeout: 30000 },
       );
       return { success: true, usedAdmin: true };
@@ -192,12 +227,23 @@ export function removeAllAttributes(
 } {
   const flag = recursive ? "-cr" : "-c";
   try {
-    execSync(`xattr ${flag} "${filePath}"`, { timeout: 10000 });
+    execFileSync("xattr", [flag, filePath], { timeout: 10000 });
     return { success: true, usedAdmin: false };
   } catch {
     try {
-      execSync(
-        `osascript -e 'do shell script "xattr ${flag} \\"${filePath}\\"" with administrator privileges'`,
+      execFileSync(
+        "osascript",
+        [
+          "-e",
+          "on run argv",
+          "-e",
+          "set p to item 1 of argv",
+          "-e",
+          `do shell script "xattr ${flag} " & quoted form of POSIX path p with administrator privileges`,
+          "-e",
+          "end run",
+          filePath,
+        ],
         { timeout: 30000 },
       );
       return { success: true, usedAdmin: true };
@@ -267,7 +313,7 @@ export function parseQuarantineData(rawValue: string): ParsedQuarantine | null {
     const mac2001Epoch = 978307200;
     const ts = parseInt(timestamp, 16);
     if (!isNaN(ts)) {
-      dateStr = new Date((ts + mac2001Epoch) * 1000).toLocaleString();
+      dateStr = new Date((ts + mac2001Epoch) * 1000).toLocaleString("en-US");
     }
   }
 
@@ -390,7 +436,7 @@ export function scanDirectory(dirPath: string): DirectoryScan {
 
   let lastModified = "unknown";
   try {
-    lastModified = new Date(fs.statSync(dirPath).mtime).toLocaleString();
+    lastModified = new Date(fs.statSync(dirPath).mtime).toLocaleString("en-US");
   } catch {
     // ignore
   }
