@@ -45,6 +45,15 @@ Opens a file picker (or uses your current Finder selection), then shows a full b
 
 Lists every extended attribute on a file in a searchable list view. Tap any attribute to see its full value — useful for understanding exactly what metadata macOS has attached to a file.
 
+### Apps & folders
+
+Both commands also accept directories:
+
+- **Apps (`.app`)** are scanned **recursively** — bundles often hold many internal quarantined files, and you'll see each one listed (and can clear them all at once).
+- **Plain folders** are scanned **one level deep** (immediate contents only), so large directories like Downloads stay fast.
+
+When removing on a directory, the extension runs the recursive `xattr -dr` after a confirmation that tells you how many items are affected.
+
 ---
 
 ## Tips

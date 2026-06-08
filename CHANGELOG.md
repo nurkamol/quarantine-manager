@@ -1,5 +1,12 @@
 # Quarantine Manager Changelog
 
+## [Scan apps and folders] - {PR_MERGE_DATE}
+
+### Added
+- Scan directories for quarantined files: `.app` bundles are scanned recursively (they often contain many internal quarantined files), while plain folders are scanned one level deep so large trees stay responsive
+- **Check Quarantine Status** lists every quarantined item found inside an app or folder
+- **Remove Quarantine** shows an aggregate summary and clears `com.apple.quarantine` from a whole bundle or folder at once (recursive), plus a recursive "Remove All Attributes" option
+
 ## [1.0.0] - 2026-02-28
 
 ### Added
