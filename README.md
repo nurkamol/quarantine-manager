@@ -12,16 +12,6 @@ Developers and power users frequently need to check and clear this flag — for 
 
 ---
 
-## Screenshots
-
-<img src="metadata/quarantine-manager-1.png" width="800" alt="Remove Quarantine command">
-<img src="metadata/quarantine-manager-2.png" width="800" alt="Quarantine details view">
-<img src="metadata/quarantine-manager-3.png" width="800" alt="Extended attributes list">
-<img src="metadata/quarantine-manager-4.png" width="800" alt="Check Quarantine Status command">
-<img src="metadata/quarantine-manager-5.png" width="800" alt="Attribute detail view">
-
----
-
 ## Commands
 
 ### Remove Quarantine
