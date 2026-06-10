@@ -13,16 +13,12 @@ type ExtensionPreferences = {}
 declare type Preferences = ExtensionPreferences
 
 declare namespace Preferences {
-  /** Preferences accessible in the `remove-quarantine` command */
-  export type RemoveQuarantine = ExtensionPreferences & {}
-  /** Preferences accessible in the `check-quarantine` command */
-  export type CheckQuarantine = ExtensionPreferences & {}
+  /** Preferences accessible in the `manage-quarantine` command */
+  export type ManageQuarantine = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
-  /** Arguments passed to the `remove-quarantine` command */
-  export type RemoveQuarantine = {}
-  /** Arguments passed to the `check-quarantine` command */
-  export type CheckQuarantine = {}
+  /** Arguments passed to the `manage-quarantine` command */
+  export type ManageQuarantine = {}
 }
 

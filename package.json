@@ -15,17 +15,10 @@
   ],
   "commands": [
     {
-      "name": "remove-quarantine",
-      "title": "Remove Quarantine",
+      "name": "manage-quarantine",
+      "title": "Manage Quarantine",
       "subtitle": "Quarantine Manager",
-      "description": "View quarantine status and all extended attributes for a file or app. Remove the com.apple.quarantine flag after verifying the file's source.",
-      "mode": "view"
-    },
-    {
-      "name": "check-quarantine",
-      "title": "Check Quarantine Status",
-      "subtitle": "Quarantine Manager",
-      "description": "List all extended attributes on any file or app. Inspect raw and parsed values, including quarantine data, download source metadata, and more.",
+      "description": "Scan a file, app, or folder for the com.apple.quarantine flag, inspect extended attributes, then select which items to clear quarantine from — individually or in bulk.",
       "mode": "view"
     }
   ],
