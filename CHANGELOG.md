@@ -8,8 +8,8 @@
 
 ### Added
 
-- Uninstaller-style multi-select for directory scans: every quarantined item is a selectable row (all selected by default), with **Select All** `⌘A` / **Deselect All** `⌘⇧A` and a `N of M selected` counter
-- **Remove Quarantine from Selected** `⌘↵` clears the chosen files in a single pass (one admin prompt at most), instead of all-or-nothing recursive removal
+- Uninstaller-style multi-select for directory scans: every quarantined item is a selectable row (all selected by default), with per-row toggle (`⌘S`), **Select All** `⌘⇧A` / **Deselect All** `⌘⇧D`, and a `N of M selected` counter
+- **Remove Quarantine from Selected** (the primary Enter action) clears the chosen files in a single pass (one admin prompt at most), instead of all-or-nothing recursive removal
 - Sort scanned items by path, source, or download date
 - Clean folders/apps now report scan scope (e.g. "Scanned 248 items (immediate contents only) · 0 quarantined") instead of a bare "nothing found"
 

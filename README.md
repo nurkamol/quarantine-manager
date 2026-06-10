@@ -40,7 +40,7 @@ Point it at a directory and you get an uninstaller-style checklist:
 - **Apps (`.app`)** are scanned **recursively** — bundles often hold many internal quarantined files, and each one is listed.
 - **Plain folders** are scanned **one level deep** (immediate contents only), so large directories like Downloads stay fast.
 
-Every quarantined item is shown as a **selectable row** (all selected by default). Toggle individual files, **Select All** `⌘A` / **Deselect All** `⌘⇧A`, sort by path / source / date, then **Remove Quarantine from Selected** `⌘↵` to clear exactly the files you picked in one pass — or remove just one. The section header tracks `N of M selected`.
+Every quarantined item is shown as a **selectable row** (all selected by default). Toggle individual files with `⌘S`, **Select All** `⌘⇧A` / **Deselect All** `⌘⇧D`, sort by path / source / date, then press **Enter** on **Remove Quarantine from Selected** to clear exactly the files you picked in one pass — or remove just one. The section header tracks `N of M selected`.
 
 ---
 
