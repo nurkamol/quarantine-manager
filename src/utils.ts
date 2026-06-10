@@ -230,14 +230,33 @@ export function removeQuarantineFromPaths(paths: string[]): {
 } {
   if (paths.length === 0) return { success: true, usedAdmin: false };
 
+  // Fast path: clear everything in one call.
   try {
     execFileSync("xattr", ["-d", "com.apple.quarantine", ...paths], {
       timeout: 30000,
     });
     return { success: true, usedAdmin: false };
   } catch {
-    // Build a single `do shell script ... with administrator privileges` that
-    // clears every path, quoting each one safely inside AppleScript.
+    // `xattr -d` aborts the whole batch if ANY path lacks the attribute (already
+    // cleared, removed between scan and action, etc.). Retry each path on its own
+    // so one already-clean file doesn't force the entire selection to escalate —
+    // only paths that fail for a real reason (e.g. permissions) need admin.
+    const needsAdmin: string[] = [];
+    for (const p of paths) {
+      const res = spawnSync("xattr", ["-d", "com.apple.quarantine", p], {
+        encoding: "utf8",
+        timeout: 10000,
+      });
+      if (res.status === 0) continue;
+      // Nothing to remove (attribute or file already gone) — treat as cleared.
+      if (/No such xattr|No such file/i.test(res.stderr ?? "")) continue;
+      needsAdmin.push(p);
+    }
+
+    if (needsAdmin.length === 0) return { success: true, usedAdmin: false };
+
+    // One admin prompt covering only the paths that were genuinely blocked,
+    // quoting each one safely inside AppleScript.
     try {
       execFileSync(
         "osascript",
@@ -256,7 +275,7 @@ export function removeQuarantineFromPaths(paths: string[]): {
           "do shell script cmd with administrator privileges",
           "-e",
           "end run",
-          ...paths,
+          ...needsAdmin,
         ],
         { timeout: 60000 },
       );
@@ -340,6 +359,8 @@ export interface ParsedQuarantine {
   flags: string[];
   uuid: string;
   rawFlags: string;
+  /** Unix epoch (seconds) of the download, for sorting; null if unparseable */
+  epoch: number | null;
 }
 
 export function parseQuarantineData(rawValue: string): ParsedQuarantine | null {
@@ -361,11 +382,13 @@ export function parseQuarantineData(rawValue: string): ParsedQuarantine | null {
   if (flags.length === 0) flags.push("Quarantined");
 
   let dateStr = "Unknown";
+  let epoch: number | null = null;
   if (timestamp.length === 8) {
     const mac2001Epoch = 978307200;
     const ts = parseInt(timestamp, 16);
     if (!isNaN(ts)) {
-      dateStr = new Date((ts + mac2001Epoch) * 1000).toLocaleString("en-US");
+      epoch = ts + mac2001Epoch;
+      dateStr = new Date(epoch * 1000).toLocaleString("en-US");
     }
   }
 
@@ -375,6 +398,7 @@ export function parseQuarantineData(rawValue: string): ParsedQuarantine | null {
     flags,
     uuid,
     rawFlags: flagHex,
+    epoch,
   };
 }
 

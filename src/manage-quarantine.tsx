@@ -925,8 +925,9 @@ function sortTargets(targets: Target[], key: SortKey): Target[] {
     if (key === "source") {
       return (pa?.source ?? "").localeCompare(pb?.source ?? "");
     }
-    // date — most recent first
-    return (pb?.date ?? "").localeCompare(pa?.date ?? "");
+    // date — most recent first, compared on the numeric epoch (the display
+    // string is locale-formatted and does not sort lexicographically).
+    return (pb?.epoch ?? -Infinity) - (pa?.epoch ?? -Infinity);
   });
   return sorted;
 }
